@@ -1,0 +1,27 @@
+enum PaymentStatus {
+    PENDING
+    PAID
+    PARTIALLY_PAID
+    OVERDUE
+}
+
+model Payment {
+    id           String        @id @default(uuid())
+    amount       Float
+    dueDate      DateTime
+    paidAt       DateTime?
+    status       PaymentStatus @default(PENDING)
+    membershipId String
+    membership   Membership    @relation(fields: [membershipId], references: [id], onDelete: NoAction)
+    groupId      String
+    group        Group         @relation(fields: [groupId], references: [id], onDelete: NoAction)
+    receiverId   String
+    receiver     User          @relation(fields: [receiverId], references: [id], onDelete: NoAction)
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+
+    @@index([dueDate])
+    @@index([membershipId])
+    @@index([groupId])
+    @@map("payments")
+}

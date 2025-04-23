@@ -1,0 +1,15 @@
+model User {
+    id       String  @id @default(uuid())
+    email    String? @unique @default(dbgenerated("NULL"))
+    password String? @default(dbgenerated("NULL"))
+
+    phoneNumber   String?      @default(dbgenerated("NULL"))
+    createdAt     DateTime     @default(now())
+    updatedAt     DateTime     @updatedAt
+    createdGroups Group[]
+    membership    Membership[]
+    Message       Message[]
+    Payment       Payment[]
+
+    @@map("users")
+}

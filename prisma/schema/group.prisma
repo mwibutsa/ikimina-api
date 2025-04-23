@@ -1,0 +1,40 @@
+enum ContributionPeriod {
+    DAILY
+    WEEKLY
+    BI_WEEKLY
+    MONTHLY
+}
+
+enum DrawMode {
+    ADMIN_SHUFFLE
+    SELF_DRAW
+}
+
+model Group {
+    id                   String             @id @default(uuid())
+    name                 String
+    invitationCode       String             @unique
+    adminCode            String
+    contributionPeriod   ContributionPeriod @default(MONTHLY)
+    contributionAmount   Float
+    contributionCurrency String
+    drawMode             DrawMode           @default(SELF_DRAW)
+    isLocked             Boolean            @default(false)
+    nextPaymentDate      DateTime?
+    createdBy            String
+    creator              User               @relation(fields: [createdBy], references: [id], onDelete: NoAction)
+    createdAt            DateTime           @default(now())
+    updatedAt            DateTime           @updatedAt
+    Membership           Membership[]
+    Payment              Payment[]
+    Message              Message[]
+    Draw                 Draw[]
+    totalMembers         Int                @default(2)
+
+    @@index([createdBy])
+    @@index([invitationCode])
+    @@index([adminCode])
+    @@index([isLocked])
+    @@index([nextPaymentDate])
+    @@map("groups")
+}
