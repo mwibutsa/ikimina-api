@@ -89,5 +89,6 @@
   },
   "prisma": {
     "schema": "./prisma/schema"
-  }
+  },
+  "packageManager": "yarn@4.9.1"
 }
