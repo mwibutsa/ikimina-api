@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE "draws" ADD COLUMN     "ipAddress" TEXT NOT NULL DEFAULT '';
+
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "ipAddress" TEXT DEFAULT '',
+ALTER COLUMN "email" SET DEFAULT NULL,
+ALTER COLUMN "password" SET DEFAULT NULL,
+ALTER COLUMN "phoneNumber" SET DEFAULT NULL;

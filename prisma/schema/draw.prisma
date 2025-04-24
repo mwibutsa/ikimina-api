@@ -1,8 +1,9 @@
 model Draw {
-    id       String @id @default(uuid())
-    groupId  String
-    group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
-    position Int
+    id        String @id @default(uuid())
+    groupId   String
+    group     Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+    position  Int
+    ipAddress String @default("")
 
     membershipId String
     membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)

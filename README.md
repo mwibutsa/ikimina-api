@@ -21,41 +21,134 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+# Ikimina API
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This is the backend API for the Ikimina application, which helps users organize, join, and manage money-rounds (rotating savings groups).
 
-## Project setup
+## Features
+
+- User authentication and registration
+- Create and join money-round groups
+- Self-draw or admin-shuffle position mechanisms
+- Payment tracking and management
+- Group messaging
+- Admin verification using admin codes
+
+## Tech Stack
+
+- NestJS - Backend framework
+- Prisma - ORM
+- PostgreSQL - Database
+- JWT - Authentication
+- TypeScript - Language
+
+## Prerequisites
+
+- Node.js (v14 or later)
+- PostgreSQL
+- Yarn
+
+## Getting Started
+
+### 1. Clone the repository
 
 ```bash
-$ yarn install
+git clone https://github.com/your-username/ikimina-api.git
+cd ikimina-api
 ```
 
-## Compile and run the project
+### 2. Install dependencies
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+yarn install
 ```
 
-## Run tests
+### 3. Set up environment variables
+
+Create a `.env` file in the root directory with the following content:
+
+```
+# Database
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ikimina?schema=public"
+
+# JWT
+JWT_SECRET="your-secret-key-here"
+JWT_EXPIRES_IN="7d"
+
+# App
+PORT=3000
+```
+
+Make sure to update the DATABASE_URL with your PostgreSQL credentials.
+
+### 4. Generate Prisma client
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+npx prisma generate
 ```
+
+### 5. Run migrations
+
+```bash
+npx prisma migrate dev
+```
+
+### 6. Start the development server
+
+```bash
+yarn start:dev
+```
+
+The API will be available at `http://localhost:3000/api`.
+
+## API Documentation
+
+Once the server is running, you can access the Swagger documentation at:
+
+```
+http://localhost:3000/api
+```
+
+This will provide an interactive interface to test and explore all API endpoints.
+
+## Main Endpoints
+
+### Authentication
+
+- POST `/auth/register` - Register a new user
+- POST `/auth/login` - Login a user
+
+### Groups
+
+- POST `/groups` - Create a new group
+- GET `/groups/:id` - Get a group by ID
+- PUT `/groups/:id` - Update a group
+- PUT `/groups/:id/lock` - Lock a group
+
+### Memberships
+
+- POST `/memberships/join` - Join a group
+- GET `/memberships/group/:groupId` - Get all members of a group
+- GET `/memberships/user` - Get all groups that the user is a member of
+
+### Draws
+
+- POST `/draws/position` - Draw a position for a member
+- POST `/draws/admin-shuffle` - Admin shuffle all positions in a group
+- GET `/draws/group/:groupId` - Get all draws for a group
+- GET `/draws/membership/:membershipId` - Get the position for a member
+
+### Payments
+
+- POST `/payments` - Create a new payment
+- PUT `/payments/:id/status` - Update payment status
+- GET `/payments/group/:groupId` - Get all payments for a group
+- POST `/payments/schedule/:groupId` - Generate payment schedule for a group
+
+### Messages
+
+- POST `/messages` - Create a new message
+- GET `/messages/group/:groupId` - Get all messages for a group
 
 ## Deployment
 
@@ -95,4 +188,4 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is licensed under the MIT License.

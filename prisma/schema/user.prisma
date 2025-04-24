@@ -1,9 +1,11 @@
 model User {
-    id       String  @id @default(uuid())
-    email    String? @unique @default(dbgenerated("NULL"))
-    password String? @default(dbgenerated("NULL"))
-
+    id            String       @id @default(uuid())
+    email         String?      @unique @default(dbgenerated("NULL"))
+    password      String?      @default(dbgenerated("NULL"))
+    firstName     String?
+    lastName      String?
     phoneNumber   String?      @default(dbgenerated("NULL"))
+    ipAddress     String?      @default("")
     createdAt     DateTime     @default(now())
     updatedAt     DateTime     @updatedAt
     createdGroups Group[]
