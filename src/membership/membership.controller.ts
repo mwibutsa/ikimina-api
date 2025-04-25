@@ -4,21 +4,12 @@ import {
   Get,
   Param,
   Post,
-  UseGuards,
-  Request,
   Headers,
   Query,
 } from '@nestjs/common';
 import { MembershipService } from './membership.service';
 import { JoinGroupDto } from './dto/join-group.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  ApiBearerAuth,
-  ApiHeader,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags, ApiHeader } from '@nestjs/swagger';
 
 @ApiTags('Memberships')
 @Controller('memberships')

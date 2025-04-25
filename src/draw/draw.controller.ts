@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  UseGuards,
-  Headers,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Headers } from '@nestjs/common';
 import { DrawService } from './draw.service';
 import { DrawPositionDto } from './dto/draw-position.dto';
 import { AdminShuffleDto } from './dto/admin-shuffle.dto';

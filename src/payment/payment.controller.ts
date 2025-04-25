@@ -1,22 +1,8 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -24,8 +10,6 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new payment' })
   @ApiResponse({ status: 201, description: 'Payment created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -35,8 +19,6 @@ export class PaymentController {
   }
 
   @Put(':id/status')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update payment status' })
   @ApiResponse({
     status: 200,
@@ -53,8 +35,6 @@ export class PaymentController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a payment by id' })
   @ApiResponse({ status: 200, description: 'Returns the payment' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -64,8 +44,6 @@ export class PaymentController {
   }
 
   @Get('group/:groupId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all payments for a group' })
   @ApiResponse({
     status: 200,
@@ -77,8 +55,6 @@ export class PaymentController {
   }
 
   @Get('membership/:membershipId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all payments for a membership' })
   @ApiResponse({
     status: 200,
@@ -90,8 +66,6 @@ export class PaymentController {
   }
 
   @Post('schedule/:groupId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate payment schedule for a group' })
   @ApiResponse({
     status: 201,
