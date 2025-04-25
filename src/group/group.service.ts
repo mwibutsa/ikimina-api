@@ -185,7 +185,7 @@ export class GroupService {
     return memberships.map((membership) => membership.group);
   }
 
-  private generateUniqueCode(length = 6): string {
+  private generateUniqueCode(length = 4): string {
     return randomBytes(Math.ceil(length / 2))
       .toString('hex')
       .slice(0, length)
