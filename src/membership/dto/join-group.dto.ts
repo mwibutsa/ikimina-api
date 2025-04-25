@@ -9,8 +9,8 @@ export class JoinGroupDto {
 
   @ApiProperty({ description: 'User email', example: 'user@example.com' })
   @IsEmail({}, { message: 'Please provide a valid email address' })
-  @IsNotEmpty({ message: 'Email is required' })
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @ApiProperty({ description: 'User first name', example: 'John' })
   @IsString()
@@ -28,6 +28,6 @@ export class JoinGroupDto {
     required: false,
   })
   @IsString()
-  @IsOptional()
-  phoneNumber?: string;
+  @IsNotEmpty({ message: 'Phone number is required' })
+  phoneNumber: string;
 }

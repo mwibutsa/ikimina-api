@@ -32,10 +32,12 @@ export class DrawService {
         'Group is locked, positions cannot be drawn',
       );
     }
-
     // Check if the member has already drawn a position
     const existingDraw = await this.prisma.draw.findFirst({
-      where: { membershipId: drawPositionDto.membershipId },
+      where: {
+        membershipId: drawPositionDto.membershipId,
+        groupCycle: membership.group.activeCycle,
+      },
     });
 
     if (existingDraw) {
@@ -53,13 +55,21 @@ export class DrawService {
           },
         },
         include: {
-          Draw: true,
+          draws: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
         },
       });
 
       // Check if any of those memberships already have a draw
       const existingDrawWithSameIp = membershipsWithSameIp.find(
-        (m) => m.Draw && m.Draw.length > 0 && m.id !== membership.id,
+        (m) =>
+          m.draws &&
+          m.draws.length > 0 &&
+          m.id !== membership.id &&
+          m.draws[0].groupCycle === membership.group.activeCycle,
       );
 
       if (existingDrawWithSameIp) {
@@ -97,6 +107,7 @@ export class DrawService {
       data: {
         groupId: membership.groupId,
         membershipId: membership.id,
+        groupCycle: membership.group.activeCycle,
         position: drawnPosition,
         ipAddress: clientIp || '',
       },
@@ -174,6 +185,7 @@ export class DrawService {
           membershipId: memberships[i].id,
           position: positions[i],
           ipAddress: 'admin-shuffle',
+          groupCycle: group.activeCycle,
         },
         include: {
           membership: {
@@ -220,8 +232,13 @@ export class DrawService {
   }
 
   async getMemberPosition(membershipId: string) {
+    const membership = await this.prisma.membership.findUnique({
+      where: { id: membershipId },
+      include: { group: true },
+    });
+
     const draw = await this.prisma.draw.findFirst({
-      where: { membershipId },
+      where: { membershipId, groupCycle: membership?.group.activeCycle },
       include: {
         membership: {
           include: {
@@ -245,5 +262,13 @@ export class DrawService {
     }
 
     return draw;
+  }
+
+  async hasCycleDraw(membershipId: string, groupCycle: number) {
+    const draws = await this.prisma.draw.count({
+      where: { membershipId, groupCycle },
+    });
+
+    return draws > 0;
   }
 }

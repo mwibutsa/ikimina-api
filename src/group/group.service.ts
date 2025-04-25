@@ -88,7 +88,7 @@ export class GroupService {
             phoneNumber: true,
           },
         },
-        Membership: {
+        memberships: {
           include: {
             user: {
               select: {
@@ -99,10 +99,10 @@ export class GroupService {
                 phoneNumber: true,
               },
             },
-            Draw: true,
+            draws: true,
           },
         },
-        Draw: true,
+        draws: true,
       },
     });
 

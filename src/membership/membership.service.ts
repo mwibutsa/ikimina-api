@@ -7,13 +7,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { GroupService } from '../group/group.service';
 import { JoinGroupDto } from './dto/join-group.dto';
-
+import { DrawService } from '../draw/draw.service';
 @Injectable()
 export class MembershipService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly groupService: GroupService,
+    private readonly drawService: DrawService,
   ) {}
 
   async joinGroup(joinGroupDto: JoinGroupDto, clientIp?: string) {
@@ -31,8 +32,8 @@ export class MembershipService {
     }
 
     // Check if user exists by email, or create a new user
-    let user = joinGroupDto.email
-      ? await this.userService.getUserByEmail(joinGroupDto.email)
+    let user = joinGroupDto.phoneNumber
+      ? await this.userService.getUserByPhoneNumber(joinGroupDto.phoneNumber)
       : null;
 
     if (!user) {
@@ -46,7 +47,7 @@ export class MembershipService {
       });
     }
 
-    // Check if user is already a member
+    // Check if user is already a member and has drawn a spot
     const existingMembership = await this.prisma.membership.findUnique({
       where: {
         groupMembership: {
@@ -54,10 +55,26 @@ export class MembershipService {
           userId: user.id,
         },
       },
+      include: {
+        draws: true,
+      },
     });
 
     if (existingMembership) {
-      throw new BadRequestException('User is already a member of this group');
+      // Only reject if they've already drawn a spot
+      if (
+        await this.drawService.hasCycleDraw(
+          existingMembership.id,
+          group.activeCycle || 1,
+        )
+      ) {
+        throw new BadRequestException(
+          'User has already drawn a spot in this group',
+        );
+      }
+
+      // If they haven't drawn a spot, return their existing membership
+      return existingMembership;
     }
 
     // Check if group has reached its member limit
@@ -88,6 +105,7 @@ export class MembershipService {
             phoneNumber: true,
           },
         },
+        draws: true,
       },
     });
 
@@ -121,8 +139,8 @@ export class MembershipService {
             phoneNumber: true,
           },
         },
-        Draw: true,
-        Payment: {
+        draws: true,
+        payments: {
           select: {
             id: true,
             amount: true,
@@ -151,7 +169,7 @@ export class MembershipService {
           },
         },
         group: true,
-        Draw: true,
+        draws: true,
       },
     });
   }
@@ -166,7 +184,7 @@ export class MembershipService {
       },
       include: {
         group: true,
-        Draw: true,
+        draws: true,
       },
     });
   }

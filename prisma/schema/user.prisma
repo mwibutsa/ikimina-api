@@ -4,7 +4,7 @@ model User {
     password      String?      @default(dbgenerated("NULL"))
     firstName     String?
     lastName      String?
-    phoneNumber   String?      @default(dbgenerated("NULL"))
+    phoneNumber   String?      @unique @default(dbgenerated("NULL"))
     ipAddress     String?      @default("")
     createdAt     DateTime     @default(now())
     updatedAt     DateTime     @updatedAt

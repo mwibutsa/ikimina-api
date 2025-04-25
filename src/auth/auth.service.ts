@@ -18,11 +18,13 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     // Check if user with email already exists
-    const existingUser = await this.userService.getUserByEmail(
-      registerDto.email,
-    );
-    if (existingUser) {
-      throw new BadRequestException('User with this email already exists');
+    if (registerDto.email) {
+      const existingUser = await this.userService.getUserByEmail(
+        registerDto.email,
+      );
+      if (existingUser) {
+        throw new BadRequestException('User with this email already exists');
+      }
     }
 
     // Hash the password
@@ -35,6 +37,7 @@ export class AuthService {
       firstName: registerDto.firstName,
       lastName: registerDto.lastName,
       phoneNumber: registerDto.phoneNumber,
+      ipAddress: registerDto.ipAddress,
     });
 
     // Generate JWT token
@@ -47,6 +50,7 @@ export class AuthService {
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         phoneNumber: newUser.phoneNumber,
+        ipAddress: newUser.ipAddress,
       },
       token,
     };
@@ -68,6 +72,13 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Update IP address if provided
+    if (loginDto.ipAddress && loginDto.ipAddress !== user.ipAddress) {
+      await this.userService.updateUser(user.id, {
+        ipAddress: loginDto.ipAddress,
+      });
+    }
+
     // Generate JWT token
     const token = this.generateToken(user.id);
 
@@ -78,6 +89,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         phoneNumber: user.phoneNumber,
+        ipAddress: loginDto.ipAddress || user.ipAddress,
       },
       token,
     };

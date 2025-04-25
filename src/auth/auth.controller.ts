@@ -1,8 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -16,7 +16,14 @@ export class AuthController {
     status: 400,
     description: 'Bad request, validation error or user already exists',
   })
-  register(@Body() registerDto: RegisterDto) {
+  @ApiHeader({ name: 'X-Client-IP', required: false })
+  register(
+    @Body() registerDto: RegisterDto,
+    @Headers('x-client-ip') clientIp?: string,
+  ) {
+    if (clientIp && !registerDto.ipAddress) {
+      registerDto.ipAddress = clientIp;
+    }
     return this.authService.register(registerDto);
   }
 
@@ -27,7 +34,11 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized - invalid credentials',
   })
-  login(@Body() loginDto: LoginDto) {
+  @ApiHeader({ name: 'X-Client-IP', required: false })
+  login(@Body() loginDto: LoginDto, @Headers('x-client-ip') clientIp?: string) {
+    if (clientIp && !loginDto.ipAddress) {
+      loginDto.ipAddress = clientIp;
+    }
     return this.authService.login(loginDto);
   }
 }

@@ -11,10 +11,11 @@ export class RegisterDto {
   @ApiProperty({
     description: 'User email address',
     example: 'user@example.com',
+    required: false,
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
-  @IsNotEmpty({ message: 'Email is required' })
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @ApiProperty({ description: 'User password', example: 'password123' })
   @IsString()
@@ -40,4 +41,13 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   phoneNumber?: string;
+
+  @ApiProperty({
+    description: 'User IP address',
+    example: '192.168.1.1',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  ipAddress?: string;
 }

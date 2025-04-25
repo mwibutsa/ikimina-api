@@ -44,6 +44,12 @@ export class UserService {
     });
   }
 
+  getUserByPhoneNumber(phoneNumber: string) {
+    return this.prisma.user.findUnique({
+      where: { phoneNumber },
+    });
+  }
+
   updateUser(id: string, userData: Prisma.UserUpdateInput) {
     return this.prisma.user.update({
       where: { id },

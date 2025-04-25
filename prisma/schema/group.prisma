@@ -25,11 +25,12 @@ model Group {
     creator              User               @relation(fields: [createdBy], references: [id], onDelete: NoAction)
     createdAt            DateTime           @default(now())
     updatedAt            DateTime           @updatedAt
-    Membership           Membership[]
-    Payment              Payment[]
-    Message              Message[]
-    Draw                 Draw[]
+    memberships          Membership[]
+    payments             Payment[]
+    messages             Message[]
+    draws                Draw[]
     totalMembers         Int                @default(2)
+    activeCycle          Int?               @default(1)
 
     @@index([createdBy])
     @@index([invitationCode])

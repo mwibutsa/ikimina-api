@@ -227,8 +227,8 @@ export class PaymentService {
     const group = await this.prisma.group.findUnique({
       where: { id: groupId },
       include: {
-        Membership: true,
-        Draw: {
+        memberships: true,
+        draws: {
           include: {
             membership: true,
           },
@@ -241,7 +241,7 @@ export class PaymentService {
     }
 
     // Check if draws are completed
-    if (group.Draw.length < group.Membership.length) {
+    if (group.draws.length < group.memberships.length) {
       throw new BadRequestException(
         'Cannot generate payment schedule until all positions are drawn',
       );
@@ -253,7 +253,9 @@ export class PaymentService {
     });
 
     // Sort draws by position
-    const sortedDraws = [...group.Draw].sort((a, b) => a.position - b.position);
+    const sortedDraws = [...group.draws].sort(
+      (a, b) => a.position - b.position,
+    );
 
     // Generate payment schedule based on contribution period
     const payments: Payment[] = [];
@@ -264,7 +266,7 @@ export class PaymentService {
       const receiverMembership = sortedDraws[i].membership;
 
       // For each member, create a payment to each position holder
-      for (const membership of group.Membership) {
+      for (const membership of group.memberships) {
         // Skip creating payment from receiver to themselves
         if (membership.id === receiverMembership.id) continue;
 

@@ -6,8 +6,8 @@ model Membership {
     user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
     createdAt DateTime  @default(now())
     updatedAt DateTime  @updatedAt
-    Payment   Payment[]
-    Draw      Draw[]
+    payments  Payment[]
+    draws     Draw[]
 
     @@unique([groupId, userId], name: "groupMembership")
     @@index([groupId])
