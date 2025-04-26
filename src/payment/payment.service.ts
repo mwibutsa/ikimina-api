@@ -247,6 +247,14 @@ export class PaymentService {
       );
     }
 
+    // Check if start date is in the past
+    const startDate = new Date();
+    if (startDate < new Date(group.createdAt)) {
+      throw new BadRequestException(
+        'Cannot generate payment schedule for a group that has already started. Please create a new group.',
+      );
+    }
+
     // Delete any existing payments
     await this.prisma.payment.deleteMany({
       where: { groupId },
@@ -259,7 +267,6 @@ export class PaymentService {
 
     // Generate payment schedule based on contribution period
     const payments: Payment[] = [];
-    const startDate = new Date();
     const currentDate = new Date(startDate);
 
     for (let i = 0; i < sortedDraws.length; i++) {
@@ -280,8 +287,6 @@ export class PaymentService {
             receiverId: receiverMembership.userId,
           },
         });
-
-        // Define the payment type explicitly to avoid type errors
 
         payments.push(payment);
       }
@@ -305,6 +310,11 @@ export class PaymentService {
       }
     }
 
+    if (startDate < new Date()) {
+      throw new BadRequestException(
+        'Cannot generate payment schedule for a group that has already started. Please create a new group.',
+      );
+    }
     // Update group with next payment date
     await this.prisma.group.update({
       where: { id: groupId },
