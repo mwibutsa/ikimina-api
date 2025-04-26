@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -22,13 +22,28 @@ export class AuthService {
       const existingUser = await this.userService.getUserByEmail(
         registerDto.email,
       );
+
+      if (registerDto.phoneNumber) {
+        const existingUserByPhone = await this.userService.getUserByPhoneNumber(
+          registerDto.phoneNumber,
+        );
+        if (existingUserByPhone) {
+          throw new ConflictException(
+            'User with the provided phone number already exists',
+          );
+        }
+      }
       if (existingUser) {
-        throw new BadRequestException('User with this email already exists');
+        throw new ConflictException(
+          'User with the provided email already exists',
+        );
       }
     }
 
     // Hash the password
-    const hashedPassword = await this.hashPassword(registerDto.password);
+    const hashedPassword = await this.hashPassword(
+      registerDto.password ?? registerDto.phoneNumber,
+    );
 
     // Create the user
     const newUser = await this.userService.createUser({
@@ -58,7 +73,9 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     // Find user by email
-    const user = await this.userService.getUserByEmail(loginDto.email);
+    const user = await this.userService.getUserByPhoneNumber(
+      loginDto.phoneNumber,
+    );
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }

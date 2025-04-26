@@ -35,8 +35,8 @@ export class CreateUserGroupDto {
     required: false,
   })
   @IsString()
-  @IsOptional()
-  phoneNumber?: string;
+  @IsNotEmpty({ message: 'Phone number is required' })
+  phoneNumber: string;
 
   @ApiProperty({ description: 'Group information' })
   @ValidateNested()

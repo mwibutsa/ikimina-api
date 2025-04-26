@@ -39,8 +39,8 @@ export class RegisterDto {
     required: false,
   })
   @IsString()
-  @IsOptional()
-  phoneNumber?: string;
+  @IsNotEmpty({ message: 'Phone number is required' })
+  phoneNumber: string;
 
   @ApiProperty({
     description: 'User IP address',
