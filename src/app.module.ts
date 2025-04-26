@@ -10,10 +10,17 @@ import { MembershipModule } from './membership/membership.module';
 import { PaymentModule } from './payment/payment.module';
 import { MessageModule } from './message/message.module';
 import { DrawModule } from './draw/draw.module';
-
+import { config } from 'dotenv';
+import * as Joi from 'joi';
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [config, () => process.env],
+      validationSchema: Joi.object({
+        DATABASE_URL: Joi.string().required(),
+      }),
+    }),
     UserModule,
     PrismaModule,
     GroupModule,
