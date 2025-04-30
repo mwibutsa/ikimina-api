@@ -44,55 +44,30 @@ export class DrawService {
       throw new BadRequestException('Member has already drawn a position');
     }
 
-    // Check if client IP has already drawn in this group (to prevent multiple draws)
-    if (clientIp) {
-      // Get all memberships in this group with users that have this IP
-      const membershipsWithSameIp = await this.prisma.membership.findMany({
-        where: {
-          groupId: membership.groupId,
-          user: {
-            ipAddress: clientIp,
-          },
-        },
-        include: {
-          draws: {
-            orderBy: {
-              createdAt: 'desc',
-            },
-          },
-        },
-      });
-
-      // Check if any of those memberships already have a draw
-      const existingDrawWithSameIp = membershipsWithSameIp.find(
-        (m) =>
-          m.draws &&
-          m.draws.length > 0 &&
-          m.id !== membership.id &&
-          m.draws[0].groupCycle === membership.group.activeCycle,
-      );
-
-      if (existingDrawWithSameIp) {
-        throw new BadRequestException(
-          'A member from your device has already drawn a position in this group',
-        );
-      }
-    }
-
     // Get all positions that have already been taken
     const takenPositions = await this.prisma.draw.findMany({
       where: { groupId: membership.groupId },
       select: { position: true },
     });
 
-    const takenPositionNumbers = takenPositions.map((draw) => draw.position);
+    const takenPositionCounts = takenPositions.reduce(
+      (acc, draw) => {
+        acc[draw.position] = (acc[draw.position] || 0) + 1;
+        return acc;
+      },
+      {} as Record<number, number>,
+    );
 
     // Calculate available positions
     const totalMembers = membership.group.totalMembers;
+    const membersPerRound = membership.group.membersPerRound || 1;
+    const maxPosition = Math.ceil(totalMembers / membersPerRound);
     const availablePositions = Array.from(
-      { length: totalMembers },
+      { length: maxPosition },
       (_, i) => i + 1,
-    ).filter((position) => !takenPositionNumbers.includes(position));
+    ).filter(
+      (position) => (takenPositionCounts[position] || 0) < membersPerRound,
+    );
 
     if (availablePositions.length === 0) {
       throw new BadRequestException('All positions have been drawn');
@@ -165,10 +140,9 @@ export class DrawService {
     });
 
     // Generate all positions
-    const positions = Array.from(
-      { length: group.totalMembers },
-      (_, i) => i + 1,
-    );
+    const membersPerRound = group.membersPerRound || 1;
+    const maxPosition = Math.ceil(group.totalMembers / membersPerRound);
+    const positions = Array.from({ length: maxPosition }, (_, i) => i + 1);
 
     // Shuffle positions
     for (let i = positions.length - 1; i > 0; i--) {
@@ -178,12 +152,18 @@ export class DrawService {
 
     // Assign positions to members
     const draws: Draw[] = [];
-    for (let i = 0; i < Math.min(memberships.length, positions.length); i++) {
+    let positionIndex = 0;
+
+    for (const membership of memberships) {
+      if (positionIndex >= positions.length) {
+        positionIndex = 0;
+      }
+
       const draw = await this.prisma.draw.create({
         data: {
           groupId: group.id,
-          membershipId: memberships[i].id,
-          position: positions[i],
+          membershipId: membership.id,
+          position: positions[positionIndex],
           ipAddress: 'admin-shuffle',
           groupCycle: group.activeCycle,
         },
@@ -204,6 +184,14 @@ export class DrawService {
         },
       });
       draws.push(draw);
+
+      if (
+        draws.filter((d) => d.position === positions[positionIndex]).length %
+          membersPerRound ===
+        0
+      ) {
+        positionIndex++;
+      }
     }
 
     return draws;

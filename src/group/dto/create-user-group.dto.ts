@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { CreateGroupDto } from './createGroup.dto';
@@ -37,6 +38,12 @@ export class CreateUserGroupDto {
   @IsString()
   @IsNotEmpty({ message: 'Phone number is required' })
   phoneNumber: string;
+
+  @ApiProperty({ description: 'User password', example: 'password123' })
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @IsNotEmpty({ message: 'Password is required' })
+  password: string;
 
   @ApiProperty({ description: 'Group information' })
   @ValidateNested()

@@ -9,7 +9,6 @@ import { CreateGroupDto } from './dto/createGroup.dto';
 import { UserService } from '../user/user.service';
 import { randomBytes } from 'crypto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { LockGroupDto } from './dto/lock-group.dto';
 
 @Injectable()
 export class GroupService {
@@ -37,6 +36,7 @@ export class GroupService {
       contributionCurrency: groupData.contributionCurrency,
       drawMode: groupData.drawMode,
       totalMembers: groupData.totalMembers || 10,
+      membersPerRound: groupData.membersPerRound || 1,
       creator: {
         connect: {
           id: user.id,
@@ -131,36 +131,34 @@ export class GroupService {
     return group.adminCode === adminCode;
   }
 
-  async updateGroup(
-    id: string,
-    updateGroupDto: UpdateGroupDto,
-    adminCode: string,
-  ) {
+  async updateGroup(id: string, updateGroupDto: UpdateGroupDto) {
     // Check if group exists
     const group = await this.getGroupById(id);
 
-    // Verify admin code
-    if (group.adminCode !== adminCode) {
-      throw new BadRequestException('Invalid admin code');
+    if (!group) {
+      throw new NotFoundException('Group not found');
     }
 
-    // Update the group
+    // Update the group - the GroupCreatorGuard already checks if the user is the creator
     return this.prisma.group.update({
       where: { id },
       data: updateGroupDto,
     });
   }
 
-  async lockGroup(id: string, lockGroupDto: LockGroupDto) {
+  async lockGroup(id: string) {
     // Check if group exists
     const group = await this.getGroupById(id);
 
-    // Verify admin code
-    if (group.adminCode !== lockGroupDto.adminCode) {
-      throw new BadRequestException('Invalid admin code');
+    if (!group) {
+      throw new NotFoundException('Group not found');
     }
 
-    // Lock the group
+    if (group.isLocked) {
+      throw new BadRequestException('Group is already locked');
+    }
+
+    // Lock the group - the GroupCreatorGuard already checks if the user is the creator
     return this.prisma.group.update({
       where: { id },
       data: {

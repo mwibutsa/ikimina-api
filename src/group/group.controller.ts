@@ -6,59 +6,48 @@ import {
   Post,
   Put,
   Query,
-  Headers,
+  UseGuards,
 } from '@nestjs/common';
 import { GroupService } from './group.service';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { LockGroupDto } from './dto/lock-group.dto';
-import { ApiOperation, ApiResponse, ApiTags, ApiHeader } from '@nestjs/swagger';
-import { CreateUserGroupDto } from './dto/create-user-group.dto';
-import { UserService } from '../user/user.service';
-import { User } from '@prisma/client';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GroupMemberGuard } from '../auth/guards/group-member.guard';
+import { CreateGroupDto } from './dto/createGroup.dto';
+import { CurrentUser } from '../auth/decorators/user.decorator';
 
 @ApiTags('Groups')
 @Controller('groups')
 export class GroupController {
-  constructor(
-    private readonly groupService: GroupService,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly groupService: GroupService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new group with user information' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new group' })
   @ApiResponse({ status: 201, description: 'Group created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiHeader({ name: 'X-Client-IP', required: false })
   async createGroup(
-    @Body() createUserGroupDto: CreateUserGroupDto,
-    @Headers('x-client-ip') clientIp?: string,
+    @Body() groupData: CreateGroupDto,
+    @CurrentUser('id') userId: string,
   ) {
-    // First create or find the user
-    let user: User | null = null;
+    // Create the group
+    const group = await this.groupService.createGroup(userId, groupData);
 
-    // If email is provided, try to find the user by email
-    if (createUserGroupDto.email) {
-      user = await this.userService.getUserByEmail(createUserGroupDto.email);
-    }
-
-    // If user not found, create a new user
-    if (!user) {
-      user = await this.userService.createUser({
-        firstName: createUserGroupDto.firstName,
-        lastName: createUserGroupDto.lastName,
-        email: createUserGroupDto.email,
-        phoneNumber: createUserGroupDto.phoneNumber,
-        ipAddress: clientIp || '',
-      });
-    }
-
-    // Then create the group
-    return this.groupService.createGroup(user.id, createUserGroupDto.group);
+    return group;
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a group by id' })
+  @UseGuards(JwtAuthGuard, GroupMemberGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a group by id (requires membership)' })
   @ApiResponse({ status: 200, description: 'Returns group details' })
+  @ApiResponse({ status: 401, description: 'Unauthorized or not a member' })
   @ApiResponse({ status: 404, description: 'Group not found' })
   getGroup(@Param('id') id: string) {
     return this.groupService.getGroupById(id);
@@ -73,25 +62,27 @@ export class GroupController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update a group using admin code' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a group (requires creator authentication)' })
   @ApiResponse({ status: 200, description: 'Group updated successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Group not found' })
-  updateGroup(
-    @Param('id') id: string,
-    @Body() updateGroupDto: UpdateGroupDto,
-    @Headers('admin-code') adminCode: string,
-  ) {
-    return this.groupService.updateGroup(id, updateGroupDto, adminCode);
+  updateGroup(@Param('id') id: string, @Body() updateGroupDto: UpdateGroupDto) {
+    return this.groupService.updateGroup(id, updateGroupDto);
   }
 
   @Put(':id/lock')
-  @ApiOperation({ summary: 'Lock a group' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lock a group (requires creator authentication)' })
   @ApiResponse({ status: 200, description: 'Group locked successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Group not found' })
-  lockGroup(@Param('id') id: string, @Body() lockGroupDto: LockGroupDto) {
-    return this.groupService.lockGroup(id, lockGroupDto);
+  lockGroup(@Param('id') id: string) {
+    return this.groupService.lockGroup(id);
   }
 
   @Get('find/phone')

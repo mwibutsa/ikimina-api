@@ -1,15 +1,22 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MembershipService } from './membership.service';
 import { MembershipController } from './membership.controller';
-import { PrismaModule } from '../prisma/prisma.module';
 import { UserModule } from '../user/user.module';
 import { GroupModule } from '../group/group.module';
-import { DrawService } from '#/draw/draw.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { DrawModule } from '../draw/draw.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, GroupModule],
-  providers: [MembershipService, DrawService],
+  imports: [
+    UserModule,
+    forwardRef(() => GroupModule),
+    PrismaModule,
+    DrawModule,
+    forwardRef(() => AuthModule),
+  ],
   controllers: [MembershipController],
+  providers: [MembershipService],
   exports: [MembershipService],
 })
 export class MembershipModule {}

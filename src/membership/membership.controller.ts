@@ -1,15 +1,15 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Headers,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { MembershipService } from './membership.service';
 import { JoinGroupDto } from './dto/join-group.dto';
-import { ApiOperation, ApiResponse, ApiTags, ApiHeader } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GroupMemberGuard } from '../auth/guards/group-member.guard';
+import { CurrentUser } from '../auth/decorators/user.decorator';
 
 @ApiTags('Memberships')
 @Controller('memberships')
@@ -17,44 +17,51 @@ export class MembershipController {
   constructor(private readonly membershipService: MembershipService) {}
 
   @Post('join')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Join a group using invitation code' })
   @ApiResponse({ status: 201, description: 'Successfully joined the group' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 404, description: 'Group not found' })
-  @ApiHeader({ name: 'X-Client-IP', required: false })
   joinGroup(
+    @CurrentUser('id') userId: string,
     @Body() joinGroupDto: JoinGroupDto,
-    @Headers('x-client-ip') clientIp?: string,
   ) {
-    return this.membershipService.joinGroup(joinGroupDto, clientIp);
+    return this.membershipService.joinGroup(joinGroupDto, userId);
   }
 
   @Get('group/:groupId')
-  @ApiOperation({ summary: 'Get all members of a group' })
-  @ApiResponse({ status: 200, description: 'Returns all group members' })
-  @ApiResponse({ status: 400, description: 'Bad request (invalid admin code)' })
-  @ApiHeader({
-    name: 'Admin-Code',
-    required: false,
-    description: 'Optional admin code for more detailed information',
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get all members of a group (requires creator authentication)',
   })
-  getGroupMembers(
-    @Param('groupId') groupId: string,
-    @Headers('admin-code') adminCode?: string,
-  ) {
-    return this.membershipService.getGroupMembers(groupId, adminCode);
+  @ApiResponse({ status: 200, description: 'Returns all group members' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Group not found' })
+  getGroupMembers(@Param('groupId') groupId: string) {
+    return this.membershipService.getGroupMembers(groupId);
   }
 
   @Get('user')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all groups that a user is a member of' })
   @ApiResponse({ status: 200, description: 'Returns all user memberships' })
-  getUserMemberships(@Query('identifier') identifier: string) {
-    return this.membershipService.getUserMemberships(identifier);
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  getUserMemberships(@CurrentUser('id') userId: string) {
+    return this.membershipService.getUserMemberships(userId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a specific membership by id' })
+  @UseGuards(JwtAuthGuard, GroupMemberGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Get a specific membership by id (requires membership in the group)',
+  })
   @ApiResponse({ status: 200, description: 'Returns the membership' })
+  @ApiResponse({ status: 401, description: 'Unauthorized or not a member' })
   @ApiResponse({ status: 404, description: 'Membership not found' })
   getMembership(@Param('id') id: string) {
     return this.membershipService.getMembershipById(id);

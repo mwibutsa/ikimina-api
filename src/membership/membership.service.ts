@@ -3,11 +3,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { GroupService } from '../group/group.service';
 import { JoinGroupDto } from './dto/join-group.dto';
 import { DrawService } from '../draw/draw.service';
+import { AuthService } from '../auth/auth.service';
+
 @Injectable()
 export class MembershipService {
   constructor(
@@ -15,9 +18,10 @@ export class MembershipService {
     private readonly userService: UserService,
     private readonly groupService: GroupService,
     private readonly drawService: DrawService,
+    private readonly authService: AuthService,
   ) {}
 
-  async joinGroup(joinGroupDto: JoinGroupDto, clientIp?: string) {
+  async joinGroup(joinGroupDto: JoinGroupDto, userId: string) {
     // Verify group exists and is not locked
     const group = await this.groupService.getGroupByInvitationCode(
       joinGroupDto.invitationCode,
@@ -31,20 +35,11 @@ export class MembershipService {
       throw new BadRequestException('Group is locked, new members cannot join');
     }
 
-    // Check if user exists by email, or create a new user
-    let user = joinGroupDto.phoneNumber
-      ? await this.userService.getUserByPhoneNumber(joinGroupDto.phoneNumber)
-      : null;
+    // Get user by ID
+    const user = await this.userService.getUserById(userId);
 
     if (!user) {
-      // Create new user
-      user = await this.userService.createUser({
-        email: joinGroupDto.email,
-        firstName: joinGroupDto.firstName,
-        lastName: joinGroupDto.lastName,
-        phoneNumber: joinGroupDto.phoneNumber,
-        ipAddress: clientIp || '',
-      });
+      throw new NotFoundException('User not found');
     }
 
     // Check if user is already a member and has drawn a spot
@@ -112,19 +107,8 @@ export class MembershipService {
     return membership;
   }
 
-  async getGroupMembers(groupId: string, adminCode?: string) {
-    // Optionally validate admin code
-    if (adminCode) {
-      const isValidAdmin = await this.groupService.verifyAdminCode(
-        groupId,
-        adminCode,
-      );
-      if (!isValidAdmin) {
-        throw new BadRequestException('Invalid admin code');
-      }
-    }
-
-    // Get all members
+  async getGroupMembers(groupId: string) {
+    // Get all members - the GroupCreatorGuard already checks if the user is the creator
     const members = await this.prisma.membership.findMany({
       where: {
         groupId,
@@ -174,13 +158,10 @@ export class MembershipService {
     });
   }
 
-  async getUserMemberships(phoneOrEmail: string) {
-    // Check if input is email or phone
-    const isEmail = phoneOrEmail.includes('@');
-
+  async getUserMemberships(userId: string) {
     return this.prisma.membership.findMany({
       where: {
-        user: isEmail ? { email: phoneOrEmail } : { phoneNumber: phoneOrEmail },
+        userId: userId,
       },
       include: {
         group: true,

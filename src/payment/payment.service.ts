@@ -241,7 +241,7 @@ export class PaymentService {
     }
 
     // Check if draws are completed
-    if (group.draws.length < group.memberships.length) {
+    if (group.draws.length < group.totalMembers) {
       throw new BadRequestException(
         'Cannot generate payment schedule until all positions are drawn',
       );
@@ -249,11 +249,6 @@ export class PaymentService {
 
     // Check if start date is in the past
     const startDate = new Date();
-    if (startDate < new Date(group.createdAt)) {
-      throw new BadRequestException(
-        'Cannot generate payment schedule for a group that has already started. Please create a new group.',
-      );
-    }
 
     // Delete any existing payments
     await this.prisma.payment.deleteMany({
@@ -310,11 +305,6 @@ export class PaymentService {
       }
     }
 
-    if (startDate < new Date()) {
-      throw new BadRequestException(
-        'Cannot generate payment schedule for a group that has already started. Please create a new group.',
-      );
-    }
     // Update group with next payment date
     await this.prisma.group.update({
       where: { id: groupId },

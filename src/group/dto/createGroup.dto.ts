@@ -67,4 +67,9 @@ export class CreateGroupDto implements Partial<Prisma.GroupCreateInput> {
   @IsPositive()
   @IsOptional()
   totalMembers?: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  membersPerRound?: number;
 }
